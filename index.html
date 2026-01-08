@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>食材与菜品管理系统</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+<body class="bg-gray-50 min-h-screen" x-data="app" x-cloak>
+    <!-- 加载状态 -->
+    <div x-show="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-gray-600">加载中...</div>
+    </div>
+
+    <!-- 主界面内容（登录前隐藏） -->
+    <div x-show="!loading && currentUser && currentUser.username">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex justify-between items-center mb-8">
+                <div class="flex items-center gap-4">
+                    <label for="store-selector" class="text-gray-700 font-medium">选择店铺：</label>
+                    <select id="store-selector" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" @change="switchStore()">
+                        <template x-for="store in stores" :key="store.id">
+                            <option :value="store.id" x-text="store.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-gray-700">欢迎，<span x-text="currentUser?.username" class="font-medium"></span></span>
+                    <button @click="doLogout()" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">退出登录</button>
+                </div>
+            </div>
+            
+            <!-- 导航标签 -->
+            <div class="flex justify-center mb-8">
+                <div class="inline-flex rounded-md shadow-sm" role="group">
+                    <button type="button" 
+                        class="tab-btn px-6 py-3 text-sm font-medium border rounded-l-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700"
+                        :class="activeTab === 'ingredients' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-gray-900 border-gray-200'"
+                        @click="switchTab('ingredients')">
+                        食材管理
+                    </button>
+                    <button type="button" 
+                        class="tab-btn px-6 py-3 text-sm font-medium border-t border-b hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700"
+                        :class="activeTab === 'dishes' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-gray-900 border-gray-200'"
+                        @click="switchTab('dishes')">
+                        菜品管理
+                    </button>
+                    <button type="button" 
+                        class="tab-btn px-6 py-3 text-sm font-medium border-t border-b hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700"
+                        :class="activeTab === 'use-dish' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-gray-900 border-gray-200'"
+                        @click="switchTab('use-dish')">
+                        菜品使用
+                    </button>
+                    <button type="button" 
+                        class="tab-btn px-6 py-3 text-sm font-medium border-t border-b hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700"
+                        :class="activeTab === 'consumption' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-gray-900 border-gray-200'"
+                        @click="switchTab('consumption')">
+                        消耗统计
+                    </button>
+                    <button type="button" 
+                        class="tab-btn px-6 py-3 text-sm font-medium border-t border-b hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700"
+                        :class="activeTab === 'operation-logs' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-gray-900 border-gray-200'"
+                        @click="switchTab('operation-logs')">
+                        操作记录
+                    </button>
+                    <button type="button" 
+                        class="tab-btn px-6 py-3 text-sm font-medium border rounded-r-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700"
+                        :class="activeTab === 'settings' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white text-gray-900 border-gray-200'"
+                        @click="switchTab('settings')">
+                        系统设置
+                    </button>
+                </div>
+            </div>
+
+            <!-- 食材管理 -->
+            <div x-show="activeTab === 'ingredients'" x-data="ingredients" x-init="load(currentStoreId)" @store-changed.window="load($event.detail.storeId)" @operation-changed.window="load(currentStoreId)" x-transition>
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">添加新食材</h2>
+                    <form @submit.prevent="add(currentStoreId)" class="flex gap-4">
+                        <div class="flex-1">
+                            <label for="ingredient-name" class="block text-sm font-medium text-gray-700 mb-1">食材名称</label>
+                            <input type="text" x-model="newIngredient.name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="w-32">
+                            <label for="ingredient-unit" class="block text-sm font-medium text-gray-700 mb-1">单位</label>
+                            <input type="text" x-model="newIngredient.unit" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="kg、个等">
+                        </div>
+                        <div class="w-32">
+                            <label for="ingredient-quantity" class="block text-sm font-medium text-gray-700 mb-1">初始库存</label>
+                            <input type="number" x-model.number="newIngredient.quantity" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">添加</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">食材列表</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">ID</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">名称</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">单位</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">库存</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">创建时间</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="ing in ingredients" :key="ing.id">
+                                    <tr>
+                                        <td class="px-4 py-2 border-b" x-text="ing.id"></td>
+                                        <td class="px-4 py-2 border-b" x-text="ing.name"></td>
+                                        <td class="px-4 py-2 border-b" x-text="ing.unit"></td>
+                                        <td class="px-4 py-2 border-b" x-text="ing.quantity"></td>
+                                        <td class="px-4 py-2 border-b" x-text="ing.created_at"></td>
+                                        <td class="px-4 py-2 border-b">
+                                            <div class="flex gap-2">
+                                                <input :id="`restock-${ing.id}`" type="number" min="1" placeholder="补货数量" class="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                                <button @click="restock(ing.id, currentStoreId)" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">补货</button>
+                                                <button @click="edit(ing.id)" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm ml-2">编辑</button>
+                                                <button @click="delete(ing.id, currentStoreId)" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm ml-2">删除</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 菜品管理 -->
+            <div x-show="activeTab === 'dishes'" x-data="dishes" x-init="load(currentStoreId); loadIngredientsOptions(currentStoreId)" @store-changed.window="load($event.detail.storeId); loadIngredientsOptions($event.detail.storeId)" @operation-changed.window="load(currentStoreId); loadIngredientsOptions(currentStoreId)" x-transition>
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">添加新菜品</h2>
+                    <form @submit.prevent="add(currentStoreId)" class="space-y-4">
+                        <div>
+                            <label for="dish-name" class="block text-sm font-medium text-gray-700 mb-1">菜品名称</label>
+                            <input type="text" x-model="newDish.name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">所需食材</label>
+                            <div class="space-y-3">
+                                <template x-for="(ing, index) in newDish.ingredients" :key="index">
+                                    <div class="flex gap-4 items-end">
+                                        <select x-model="ing.ingredient_id" required class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">选择食材</option>
+                                            <template x-for="item in ingredientsData" :key="item.id">
+                                                <option :value="item.id" x-text="item.name"></option>
+                                            </template>
+                                        </select>
+                                        <div class="flex items-center">
+                                            <input type="number" x-model.number="ing.quantity" min="1" value="1" placeholder="所需数量" class="w-24 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <span class="px-3 py-2 bg-gray-100 text-gray-700 border-t border-b border-r border-gray-300 rounded-r-md" x-text="getIngredientUnit(ing.ingredient_id)"></span>
+                                        </div>
+                                        <button type="button" x-show="newDish.ingredients.length > 1" @click="removeIngredientRow(index)" class="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200">-</button>
+                                        <button type="button" x-show="index === newDish.ingredients.length - 1" @click="addIngredientRow()" class="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">+</button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">添加</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">菜品列表</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">ID</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">名称</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">创建时间</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="dish in dishes" :key="dish.id">
+                                    <tr>
+                                        <td class="px-4 py-2 border-b" x-text="dish.id"></td>
+                                        <td class="px-4 py-2 border-b" x-text="dish.name"></td>
+                                        <td class="px-4 py-2 border-b" x-text="dish.created_at"></td>
+                                        <td class="px-4 py-2 border-b">
+                                            <button @click="showDetails(dish.id)" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm mr-2">详情</button>
+                                            <button @click="delete(dish.id, currentStoreId)" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm">删除</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 菜品详情模态框 -->
+                <div x-show="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40" x-transition>
+                    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+                        <template x-if="selectedDish">
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-800" x-text="selectedDish.name + ' 详情'"></h3>
+                                <template x-if="selectedDish.ingredients && selectedDish.ingredients.length > 0">
+                                    <div>
+                                        <h3 class="text-lg font-medium mb-2 text-gray-800">所需食材：</h3>
+                                        <ul class="list-disc list-inside mb-4 space-y-1">
+                                            <template x-for="ing in selectedDish.ingredients" :key="ing.id">
+                                                <li x-text="`${ing.name}：${ing.quantity} ${ing.unit}`"></li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+                                <div class="flex justify-end">
+                                    <button @click="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">关闭</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 菜品使用 -->
+            <div x-show="activeTab === 'use-dish'" x-data="useDish" x-init="loadDishes(currentStoreId); loadIngredients(currentStoreId)" @store-changed.window="loadDishes($event.detail.storeId); loadIngredients($event.detail.storeId)" @operation-changed.window="loadDishes(currentStoreId); loadIngredients(currentStoreId)" x-transition>
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">批量使用菜品</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">上传Excel文件</label>
+                            <input type="file" id="excel-file" accept=".xlsx,.xls" @change="handleExcelUpload($event)" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <p class="text-sm text-gray-500 mt-1">Excel格式：菜品名 | 数量（一行一个菜品）</p>
+                        </div>
+                        
+                        <div x-show="showExcelPreview" class="space-y-4">
+                            <h3 class="text-lg font-medium mb-2 text-gray-800">解析预览</h3>
+                            <div class="overflow-x-auto mb-4">
+                                <table class="w-full border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">菜品名称</th>
+                                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">使用数量</th>
+                                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">状态</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(item, index) in excelPreview" :key="index">
+                                            <tr>
+                                                <td class="px-4 py-2 border-b" x-text="item.name"></td>
+                                                <td class="px-4 py-2 border-b" x-text="item.quantity"></td>
+                                                <td class="px-4 py-2 border-b" :class="item.statusClass" x-text="item.status"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div x-show="excelError" class="mb-4 p-3 bg-red-100 text-red-700 rounded-md" x-text="excelError"></div>
+                            <div class="flex justify-end gap-3">
+                                <button @click="clearExcel()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">清除</button>
+                                <button @click="submitBatchUse(currentStoreId)" :disabled="submitting || excelData.length === 0" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" :class="{'opacity-50 cursor-not-allowed': submitting || excelData.length === 0}">确认使用</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">使用菜品</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-medium mb-4 text-gray-800">菜品列表</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">ID</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">名称</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">创建时间</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">数量</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="dish in dishes" :key="dish.id">
+                                        <tr>
+                                            <td class="px-4 py-2 border-b" x-text="dish.id"></td>
+                                            <td class="px-4 py-2 border-b" x-text="dish.name"></td>
+                                            <td class="px-4 py-2 border-b" x-text="dish.created_at"></td>
+                                            <td class="px-4 py-2 border-b">
+                                                <input :id="`dish-qty-${dish.id}`" type="number" min="1" value="1" class="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                            </td>
+                                            <td class="px-4 py-2 border-b">
+                                                <button @click="useDish(dish.id, parseInt(document.getElementById(`dish-qty-${dish.id}`).value), currentStoreId)" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">使用</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-medium mb-4 text-gray-800">实时食材库存</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">ID</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">名称</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">单位</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">库存</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">创建时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="ing in ingredients" :key="ing.id">
+                                        <tr>
+                                            <td class="px-4 py-2 border-b" x-text="ing.id"></td>
+                                            <td class="px-4 py-2 border-b" x-text="ing.name"></td>
+                                            <td class="px-4 py-2 border-b" x-text="ing.unit"></td>
+                                            <td class="px-4 py-2 border-b" x-text="ing.quantity"></td>
+                                            <td class="px-4 py-2 border-b" x-text="ing.created_at"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消耗统计 -->
+            <div x-show="activeTab === 'consumption'" x-data="consumption" x-init="init(); load(currentStoreId)" @store-changed.window="load($event.detail.storeId)" x-transition>
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">食材月度消耗统计</h2>
+                    <div class="flex gap-4 items-end mb-4">
+                        <div>
+                            <label for="consumption-year" class="block text-sm font-medium text-gray-700 mb-1">年份</label>
+                            <select x-model="year" @change="load(currentStoreId)" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <template x-for="y in years" :key="y.value">
+                                    <option :value="y.value" x-text="y.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="consumption-month" class="block text-sm font-medium text-gray-700 mb-1">月份</label>
+                            <select x-model="month" @change="load(currentStoreId)" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <template x-for="m in months" :key="m.value">
+                                    <option :value="m.value" x-text="m.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button @click="load(currentStoreId)" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">查询</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">消耗统计结果</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">排名</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">食材ID</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">食材名称</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">单位</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">总消耗量</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">使用次数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-if="consumptionData.length === 0">
+                                    <tr><td colspan="6" class="px-4 py-2 border-b text-center text-gray-500">暂无数据</td></tr>
+                                </template>
+                                <template x-for="(item, index) in consumptionData" :key="index">
+                                    <tr>
+                                        <td class="px-4 py-2 border-b" x-text="index + 1"></td>
+                                        <td class="px-4 py-2 border-b" x-text="item.ingredient_id"></td>
+                                        <td class="px-4 py-2 border-b" x-text="item.ingredient_name"></td>
+                                        <td class="px-4 py-2 border-b" x-text="item.unit"></td>
+                                        <td class="px-4 py-2 border-b" x-text="item.total_quantity"></td>
+                                        <td class="px-4 py-2 border-b" x-text="item.use_count"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作记录 -->
+            <div x-show="activeTab === 'operation-logs'" x-data="operationLogs" x-init="load(currentStoreId)" @store-changed.window="load($event.detail.storeId)" @operation-changed.window="load(currentStoreId)" x-transition>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">操作记录</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">ID</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作时间</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作类型</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作人</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">状态</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="log in logs" :key="log.id">
+                                    <tr>
+                                        <td class="px-4 py-2 border-b" x-text="log.id"></td>
+                                        <td class="px-4 py-2 border-b" x-text="new Date(log.operation_time).toLocaleString('zh-CN')"></td>
+                                        <td class="px-4 py-2 border-b" x-text="getOperationTypeText(log.operation_type)"></td>
+                                        <td class="px-4 py-2 border-b" x-text="log.user_name || '未知'"></td>
+                                        <td class="px-4 py-2 border-b" :class="log.is_revoked ? 'text-gray-500' : 'text-green-600'" x-text="log.is_revoked ? '已撤回' : '未撤回'"></td>
+                                        <td class="px-4 py-2 border-b">
+                                            <div class="flex gap-2">
+                                                <button @click="showDetails(log.id)" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">详情</button>
+                                                <button x-show="!log.is_revoked" @click="revoke(log.id)" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm">撤回</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 操作详情模态框 -->
+                <div x-show="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40" x-transition>
+                    <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <template x-if="selectedLog">
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4 text-gray-800">操作详情</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-sm text-gray-600">操作ID：<span x-text="selectedLog.id"></span></p>
+                                        <p class="text-sm text-gray-600">操作时间：<span x-text="new Date(selectedLog.operation_time).toLocaleString('zh-CN')"></span></p>
+                                        <p class="text-sm text-gray-600">操作类型：<span x-text="getOperationTypeText(selectedLog.operation_type)"></span></p>
+                                        <p class="text-sm text-gray-600">操作人：<span x-text="selectedLog.user_name || '未知'"></span></p>
+                                        <p class="text-sm text-gray-600">状态：<span x-text="selectedLog.is_revoked ? '已撤回' : '未撤回'"></span></p>
+                                    </div>
+                                    <div class="border-t pt-4">
+                                        <h4 class="font-medium text-gray-800 mb-2">操作详情：</h4>
+                                        <div x-html="getDetailsHtml(selectedLog.details)"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end gap-3 mt-6">
+                                    <button @click="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">关闭</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置 -->
+            <div x-show="activeTab === 'settings'" x-data="settings" x-init="loadStores(); loadUsers()" x-transition>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 密码修改 -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">修改密码</h2>
+                        <form @submit.prevent="changePassword()" class="space-y-4">
+                            <div>
+                                <label for="current-password" class="block text-sm font-medium text-gray-700 mb-1">当前密码</label>
+                                <input type="password" x-model="password.current" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">新密码</label>
+                                <input type="password" x-model="password.new" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">确认新密码</label>
+                                <input type="password" x-model="password.confirm" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div x-show="passwordError" class="mb-4 text-red-600 text-sm text-center" x-text="passwordError"></div>
+                            <div x-show="passwordSuccess" class="mb-4 text-green-600 text-sm text-center" x-text="passwordSuccess"></div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">修改密码</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 店铺管理 -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">添加新店铺</h2>
+                        <form @submit.prevent="addStore()" class="flex gap-4 mb-6">
+                            <div class="flex-1">
+                                <label for="store-name" class="block text-sm font-medium text-gray-700 mb-1">店铺名称</label>
+                                <input type="text" x-model="newStore.name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">添加</button>
+                            </div>
+                        </form>
+
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">店铺列表</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">ID</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">名称</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">创建时间</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="store in stores" :key="store.id">
+                                        <tr>
+                                            <td class="px-4 py-2 border-b" x-text="store.id"></td>
+                                            <td class="px-4 py-2 border-b" x-text="store.name"></td>
+                                            <td class="px-4 py-2 border-b" x-text="store.created_at"></td>
+                                            <td class="px-4 py-2 border-b">
+                                                <button @click="deleteStore(store.id)" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm">删除</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户管理（仅admin可见） -->
+                <div x-show="currentUser && currentUser.role === 'admin'" class="bg-white rounded-lg shadow-md p-6 mt-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">添加新用户</h2>
+                    <form @submit.prevent="addUser()" class="flex gap-4 mb-6">
+                        <div class="flex-1">
+                            <label for="user-username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <input type="text" x-model="newUser.username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex-1">
+                            <label for="user-password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <input type="password" x-model="newUser.password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="w-32">
+                            <label for="user-role" class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                            <select x-model="newUser.role" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="user">普通用户</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">添加</button>
+                        </div>
+                    </form>
+
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">用户列表</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">ID</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">用户名</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">角色</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">创建时间</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-600 border-b">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="user in users" :key="user.id">
+                                    <tr>
+                                        <td class="px-4 py-2 border-b" x-text="user.id"></td>
+                                        <td class="px-4 py-2 border-b" x-text="user.username"></td>
+                                        <td class="px-4 py-2 border-b" x-text="user.role === 'admin' ? '管理员' : '普通用户'"></td>
+                                        <td class="px-4 py-2 border-b" x-text="user.created_at"></td>
+                                        <td class="px-4 py-2 border-b">
+                                            <template x-if="user.id === 1">
+                                                <span class="text-gray-400 text-sm">不可删除</span>
+                                            </template>
+                                            <template x-if="user.id !== 1">
+                                                <button @click="deleteUser(user.id)" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm">删除</button>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录模态框 -->
+    <div x-show="!loading && (!currentUser || !currentUser.username)" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800 text-center">食材与菜品管理系统</h2>
+            <p class="text-gray-600 text-center mb-6">请登录后使用</p>
+            <form @submit.prevent="doLogin(document.getElementById('login-username').value, document.getElementById('login-password').value)">
+                <div class="mb-4">
+                    <label for="login-username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                    <input type="text" id="login-username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" id="login-password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div x-show="loginError" class="mb-4 text-red-600 text-sm text-center" x-text="loginError"></div>
+                <div class="flex justify-center">
+                    <button type="submit" class="px-8 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full">登录</button>
+                </div>
+            </form>
+            <p class="text-gray-500 text-center text-sm mt-4">默认账户: admin / 123</p>
+        </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>
