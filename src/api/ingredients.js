@@ -46,3 +46,15 @@ export async function deleteIngredient(id) {
   });
   return response;
 }
+
+export async function batchAddIngredients(data) {
+  const response = await fetch(getApiUrl('/ingredients/batch'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify(data)
+  });
+  return response;
+}

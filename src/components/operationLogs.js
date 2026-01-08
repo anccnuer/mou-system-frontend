@@ -25,6 +25,7 @@ export function operationLogsComponent() {
         'ingredient_restock': '食材补货',
         'ingredient_edit': '编辑食材',
         'ingredient_delete': '删除食材',
+        'ingredient_batch_add': '批量添加食材',
         'dish_use': '使用菜品',
         'dish_batch_use': '批量使用菜品'
       };
@@ -130,6 +131,44 @@ export function operationLogsComponent() {
             </div>
           `;
 
+        case 'ingredient_batch_add':
+          if (!parsedDetails.batch_results || parsedDetails.batch_results.length === 0) {
+            return '<p class="text-gray-500">无操作记录</p>';
+          }
+          const hasAddSuccess = parsedDetails.batch_results.some(result => result.success);
+          if (!hasAddSuccess) {
+            return '<p class="text-red-500">所有操作均失败</p>';
+          }
+          return `
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+              <strong>批量添加结果：</strong>
+              <ul class="list-disc list-inside mt-2 space-y-2">
+                ${parsedDetails.batch_results.map(result => {
+                  if (result.success) {
+                    const operationType = result.operation_type === 'restock' ? '补货' : '添加';
+                    const operationTypeClass = result.operation_type === 'restock' ? 'text-blue-600' : 'text-green-600';
+                    return `
+                      <li class="text-gray-700">
+                        <strong>${result.name}</strong> - <span class="${operationTypeClass}">${operationType}</span>
+                        <div class="ml-4 mt-1 text-gray-600">
+                          <p>食材ID：${result.ingredient_id}</p>
+                          <p>数量：${result.quantity}</p>
+                          ${result.operation_type === 'restock' ? `
+                            <p>原库存：${result.old_quantity}</p>
+                            <p>新库存：${result.new_quantity}</p>
+                          ` : ''}
+                          <p>单位：${result.unit}</p>
+                        </div>
+                      </li>
+                    `;
+                  } else {
+                    return `<li class="text-red-600"><strong>${result.name}</strong> - ${result.error}</li>`;
+                  }
+                }).join('')}
+              </ul>
+            </div>
+          `;
+
         case 'dish_batch_use':
           if (!parsedDetails.batch_results || parsedDetails.batch_results.length === 0) {
             return '<p class="text-gray-500">无操作记录</p>';
@@ -139,7 +178,7 @@ export function operationLogsComponent() {
             return '<p class="text-red-500">所有操作均失败</p>';
           }
           return `
-            <div class="space-y-2">
+            <div class="space-y-2 max-h-60 overflow-y-auto">
               <strong>批量使用结果：</strong>
               <ul class="list-disc list-inside mt-2 space-y-2">
                 ${parsedDetails.batch_results.map(result => {
