@@ -23,6 +23,11 @@ Alpine.data('app', () => ({
   activeTab: 'ingredients',
   loginError: '',
   loading: true,
+  appLoading: false,
+
+  setAppLoading(loading) {
+    this.appLoading = loading;
+  },
 
   init() {
     this.initApp();

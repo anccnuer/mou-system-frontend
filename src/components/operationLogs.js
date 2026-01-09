@@ -6,6 +6,7 @@ export function operationLogsComponent() {
     selectedLog: null,
     showModal: false,
     loading: false,
+    submitting: false,
 
     async load(storeId) {
       this.loading = true;
@@ -33,10 +34,13 @@ export function operationLogsComponent() {
     },
 
     async showDetails(id) {
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const data = await usersApi.getOperationLog(id);
         if (data.error) {
           alert('加载失败');
+          this.showModal = false;
           return;
         }
         this.selectedLog = data;
@@ -44,30 +48,43 @@ export function operationLogsComponent() {
       } catch (error) {
         console.error('加载操作详情失败:', error);
         alert('加载失败');
+        this.showModal = false;
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
     closeModal() {
       this.showModal = false;
-      this.selectedLog = null;
+      setTimeout(() => {
+        this.selectedLog = null;
+      }, 300);
     },
 
     async revoke(id) {
       if (!confirm('确定要撤回此操作吗？')) return;
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const data = await usersApi.revokeOperation(id);
         if (data.error) {
           alert(data.error);
         } else {
           alert('撤回成功！');
-          this.selectedLog = null;
           this.showModal = false;
+          setTimeout(() => {
+            this.selectedLog = null;
+          }, 300);
           this.$dispatch('operation-changed');
         }
       } catch (error) {
         console.error('撤回操作失败:', error);
         alert('撤回失败，请稍后重试');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 

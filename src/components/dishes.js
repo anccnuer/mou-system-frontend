@@ -7,6 +7,7 @@ export function dishesComponent() {
     ingredients: [],
     ingredientsData: [],
     loading: false,
+    submitting: false,
     newDish: {
       name: '',
       ingredients: [{ ingredient_id: '', quantity: 1 }]
@@ -50,6 +51,8 @@ export function dishesComponent() {
         return;
       }
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const response = await dishesApi.addDish({
           name: this.newDish.name,
@@ -70,6 +73,9 @@ export function dishesComponent() {
       } catch (error) {
         console.error('添加菜品失败:', error);
         alert('添加失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
@@ -89,6 +95,8 @@ export function dishesComponent() {
     },
 
     async showDetails(id) {
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const data = await dishesApi.getDish(id);
         this.selectedDish = data;
@@ -96,6 +104,9 @@ export function dishesComponent() {
       } catch (error) {
         console.error('加载菜品详情失败:', error);
         alert('加载失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
@@ -107,6 +118,8 @@ export function dishesComponent() {
     async delete(id, storeId) {
       if (!confirm('确定要删除这个菜品吗？')) return;
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const response = await dishesApi.deleteDish(id);
         if (response.ok) {
@@ -118,6 +131,9 @@ export function dishesComponent() {
       } catch (error) {
         console.error('删除菜品失败:', error);
         alert('删除失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     }
   };

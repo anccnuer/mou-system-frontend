@@ -16,6 +16,7 @@ export function settingsComponent() {
     users: [],
     newUser: { username: '', password: '', role: 'user' },
     loading: false,
+    submitting: false,
 
     async loadStores() {
       this.loading = true;
@@ -35,6 +36,8 @@ export function settingsComponent() {
         return;
       }
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const response = await storesApi.addStore(this.newStore.name);
         if (response.ok) {
@@ -46,6 +49,9 @@ export function settingsComponent() {
       } catch (error) {
         console.error('添加店铺失败:', error);
         alert('添加失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
@@ -56,6 +62,8 @@ export function settingsComponent() {
       }
       if (!confirm('确定要删除这个店铺吗？')) return;
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const data = await storesApi.deleteStore(id);
         if (data.error) {
@@ -66,6 +74,9 @@ export function settingsComponent() {
       } catch (error) {
         console.error('删除店铺失败:', error);
         alert('删除失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
@@ -93,6 +104,8 @@ export function settingsComponent() {
         return;
       }
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const response = await usersApi.addUser(
           this.newUser.username,
@@ -111,12 +124,17 @@ export function settingsComponent() {
       } catch (error) {
         console.error('添加用户失败:', error);
         alert('添加失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
     async deleteUser(id) {
       if (!confirm('确定要删除这个用户吗？')) return;
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const response = await usersApi.deleteUser(id);
         if (response.ok) {
@@ -129,6 +147,9 @@ export function settingsComponent() {
       } catch (error) {
         console.error('删除用户失败:', error);
         alert('删除失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
@@ -146,6 +167,8 @@ export function settingsComponent() {
         return;
       }
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const data = await authApi.changePassword(
           this.password.current,
@@ -161,6 +184,9 @@ export function settingsComponent() {
       } catch (error) {
         console.error('修改密码失败:', error);
         this.passwordError = '修改失败，请稍后重试';
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 

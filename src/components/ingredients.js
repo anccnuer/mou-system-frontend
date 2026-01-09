@@ -5,6 +5,7 @@ export function ingredientsComponent() {
   return {
     ingredients: [],
     loading: false,
+    submitting: false,
     newIngredient: {
       name: '',
       unit: '',
@@ -15,7 +16,6 @@ export function ingredientsComponent() {
     excelPreview: [],
     showExcelPreview: false,
     excelError: '',
-    submitting: false,
 
     async load(storeId) {
       this.loading = true;
@@ -35,6 +35,8 @@ export function ingredientsComponent() {
         return;
       }
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const response = await ingredientsApi.addIngredient({
           name: this.newIngredient.name,
@@ -54,10 +56,15 @@ export function ingredientsComponent() {
       } catch (error) {
         console.error('添加食材失败:', error);
         alert('添加失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
     async edit(id) {
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const ingredient = await ingredientsApi.getIngredient(id);
         const newQuantity = prompt('请输入新的库存数量：', ingredient.quantity);
@@ -78,6 +85,9 @@ export function ingredientsComponent() {
       } catch (error) {
         console.error('编辑食材失败:', error);
         alert('编辑失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
@@ -90,6 +100,8 @@ export function ingredientsComponent() {
         return;
       }
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const ingredient = await ingredientsApi.getIngredient(id);
         const newQuantity = ingredient.quantity + restockQuantity;
@@ -109,12 +121,17 @@ export function ingredientsComponent() {
       } catch (error) {
         console.error('补货失败:', error);
         alert('补货失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
     async deleteIngredient(id, storeId) {
       if (!confirm('确定要删除这个食材吗？')) return;
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const response = await ingredientsApi.deleteIngredient(id);
         if (response.ok) {
@@ -127,6 +144,9 @@ export function ingredientsComponent() {
       } catch (error) {
         console.error('删除食材失败:', error);
         alert('删除失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 

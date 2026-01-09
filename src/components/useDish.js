@@ -9,9 +9,9 @@ export function useDishComponent() {
     excelData: [],
     excelPreview: [],
     loading: false,
+    submitting: false,
     showExcelPreview: false,
     excelError: '',
-    submitting: false,
 
     async loadDishes(storeId) {
       this.loading = true;
@@ -43,6 +43,8 @@ export function useDishComponent() {
         return;
       }
 
+      this.submitting = true;
+      this.$root.appLoading = true;
       try {
         const data = await dishesApi.useDish(id, quantity, storeId);
         if (data.error) {
@@ -56,6 +58,9 @@ export function useDishComponent() {
       } catch (error) {
         console.error('使用菜品失败:', error);
         alert('使用菜品失败');
+      } finally {
+        this.submitting = false;
+        this.$root.appLoading = false;
       }
     },
 
