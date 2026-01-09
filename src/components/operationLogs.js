@@ -28,7 +28,8 @@ export function operationLogsComponent() {
         'ingredient_delete': '删除食材',
         'ingredient_batch_add': '批量添加食材',
         'dish_use': '使用菜品',
-        'dish_batch_use': '批量使用菜品'
+        'dish_batch_use': '批量使用菜品',
+        'dish_delete': '删除菜品'
       };
       return typeMap[operationType] || operationType;
     },
@@ -129,6 +130,23 @@ export function operationLogsComponent() {
               <p><strong>食材名称：</strong>${parsedDetails.deleted_ingredient.name}</p>
               <p><strong>数量：</strong>${parsedDetails.deleted_ingredient.quantity}</p>
               <p><strong>单位：</strong>${parsedDetails.deleted_ingredient.unit}</p>
+            </div>
+          `;
+
+        case 'dish_delete':
+          return `
+            <div class="space-y-2">
+              <p><strong>菜品名称：</strong>${parsedDetails.deleted_dish.name}</p>
+              ${parsedDetails.deleted_ingredients && parsedDetails.deleted_ingredients.length > 0 ? `
+                <div class="mt-3">
+                  <strong>关联的食材：</strong>
+                  <ul class="list-disc list-inside mt-2 space-y-1">
+                    ${parsedDetails.deleted_ingredients.map(ing => 
+                      `<li>食材ID：${ing.ingredient_id}，数量：${ing.quantity}</li>`
+                    ).join('')}
+                  </ul>
+                </div>
+              ` : '<p class="text-gray-500">无关联食材</p>'}
             </div>
           `;
 
