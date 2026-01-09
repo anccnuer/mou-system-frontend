@@ -250,7 +250,7 @@
                                         <td class="px-4 py-2 border-b" x-text="dish.created_at"></td>
                                         <td class="px-4 py-2 border-b">
                                             <button @click="showDetails(dish.id)" :disabled="submitting" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm mr-2 disabled:opacity-50 disabled:cursor-not-allowed">详情</button>
-                                            <button @click="delete(dish.id, currentStoreId)" :disabled="submitting" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed">删除</button>
+                                            <button @click="deleteDish(dish.id, currentStoreId)" :disabled="submitting" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed">删除</button>
                                         </td>
                                     </tr>
                                 </template>

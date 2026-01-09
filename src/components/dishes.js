@@ -115,18 +115,18 @@ export function dishesComponent() {
       this.selectedDish = null;
     },
 
-    async delete(id, storeId) {
+    async deleteDish(id, storeId) {
       if (!confirm('确定要删除这个菜品吗？')) return;
 
       this.submitting = true;
       this.$root.appLoading = true;
       try {
         const response = await dishesApi.deleteDish(id);
-        if (response.ok) {
+        if (response.success) {
           await this.load(storeId);
           this.$dispatch('operation-changed');
         } else {
-          alert('删除失败');
+          alert(response.error || '删除失败');
         }
       } catch (error) {
         console.error('删除菜品失败:', error);

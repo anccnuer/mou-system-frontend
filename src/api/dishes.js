@@ -24,9 +24,10 @@ export async function addDish(data) {
 
 export async function deleteDish(id) {
   const response = await fetch(getApiUrl(`/dishes/${id}`), {
-    method: 'DELETE'
+    method: 'DELETE',
+    headers: getAuthHeaders()
   });
-  return response;
+  return await response.json();
 }
 
 export async function useDish(id, quantity, storeId) {
