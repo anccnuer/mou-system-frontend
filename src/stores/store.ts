@@ -22,12 +22,9 @@ export const useStoreStore = defineStore('store', () => {
 
   async function addNewStore(name: string) {
     try {
-      const response = await addStore(name);
-      if (response.ok) {
-        await loadStoresList();
-        return true;
-      }
-      return false;
+      await addStore(name);
+      await loadStoresList();
+      return true;
     } catch (error) {
       console.error('添加店铺失败:', error);
       return false;

@@ -129,6 +129,7 @@ async function handleRevoke(id: number) {
       selectedLog.value = null;
     }, 300);
     await ingredientStore.loadIngredientsList(storeStore.currentStoreId);
+    await operationStore.loadOperationLogsList(storeStore.currentStoreId);
   } catch (error: any) {
     alert(error.message || '撤回失败，请稍后重试');
   }

@@ -108,8 +108,8 @@ function handleStoreChange() {
   operationStore.loadOperationLogsList(storeId);
 }
 
-function handleLogout() {
-  authStore.doLogout();
+async function handleLogout() {
+  await authStore.doLogout();
   router.push('/login');
 }
 

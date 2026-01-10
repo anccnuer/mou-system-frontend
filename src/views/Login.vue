@@ -11,6 +11,7 @@
             v-model="username"
             type="text"
             required
+            @input="clearError"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -21,6 +22,7 @@
             v-model="password"
             type="password"
             required
+            @input="clearError"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -53,6 +55,10 @@ const authStore = useAuthStore();
 const username = ref('');
 const password = ref('');
 const loading = ref(false);
+
+function clearError() {
+  authStore.loginError = '';
+}
 
 async function handleLogin() {
   loading.value = true;

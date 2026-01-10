@@ -31,7 +31,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function doLogin(username: string, password: string) {
-    loginError.value = '';
     try {
       const data = await login(username, password);
       if (data.token) {
@@ -39,6 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       if (data.user) {
         currentUser.value = data.user;
+        loginError.value = '';
       } else {
         throw new Error('No user data returned');
       }
