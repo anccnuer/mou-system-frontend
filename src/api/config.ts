@@ -1,5 +1,9 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { useLoadingStore } from '../stores/loading';
+
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+  skipLoading?: boolean;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.海里家里.top';
 
@@ -11,7 +15,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) => {
+  (config: CustomAxiosRequestConfig) => {
     const token = localStorage.getItem('jwt_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -33,14 +37,16 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    if (!response.config.skipLoading) {
+    const config = response.config as CustomAxiosRequestConfig;
+    if (!config.skipLoading) {
       const loadingStore = useLoadingStore();
       loadingStore.hideLoading();
     }
     return response;
   },
   (error) => {
-    if (!error.config?.skipLoading) {
+    const config = error.config as CustomAxiosRequestConfig;
+    if (!config?.skipLoading) {
       const loadingStore = useLoadingStore();
       loadingStore.hideLoading();
     }
