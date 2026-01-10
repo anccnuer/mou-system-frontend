@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { checkAuth, login, logout } from '../api/auth';
-import { setToken, clearToken } from '../utils/storage';
+import { setToken, clearToken, getToken, getUser, setUser, clearUser } from '../utils/storage';
 import type { User } from '../types';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -14,17 +14,34 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function checkAuthState() {
     try {
+      const token = getToken();
+      
+      if (!token) {
+        currentUser.value = null;
+        loading.value = false;
+        return;
+      }
+
+      const savedUser = getUser();
+      if (savedUser) {
+        currentUser.value = savedUser;
+        loading.value = false;
+      }
+
       const data = await checkAuth();
       if (data.authenticated && data.user) {
         currentUser.value = data.user;
+        setUser(data.user);
       } else {
         currentUser.value = null;
         clearToken();
+        clearUser();
       }
     } catch (error) {
       console.error('检查登录状态失败:', error);
       currentUser.value = null;
       clearToken();
+      clearUser();
     } finally {
       loading.value = false;
     }
@@ -38,6 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       if (data.user) {
         currentUser.value = data.user;
+        setUser(data.user);
         loginError.value = '';
       } else {
         throw new Error('No user data returned');
@@ -52,6 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function doLogout() {
     await logout();
     clearToken();
+    clearUser();
     currentUser.value = null;
   }
 

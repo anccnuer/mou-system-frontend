@@ -24,7 +24,7 @@ export const useDishStore = defineStore('dish', () => {
     submitting.value = true;
     try {
       const response = await addDish(data);
-      if (response.ok) {
+      if (!response.error) {
         await loadDishesList(data.store_id);
         return true;
       }

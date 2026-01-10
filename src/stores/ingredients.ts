@@ -24,7 +24,7 @@ export const useIngredientStore = defineStore('ingredient', () => {
     submitting.value = true;
     try {
       const response = await addIngredient(data);
-      if (response.ok) {
+      if (!response.error) {
         await loadIngredientsList(data.store_id);
         return true;
       }
@@ -41,7 +41,7 @@ export const useIngredientStore = defineStore('ingredient', () => {
     submitting.value = true;
     try {
       const response = await updateIngredient(id, data);
-      if (response.ok) {
+      if (!response.error) {
         return true;
       }
       return false;
@@ -57,7 +57,7 @@ export const useIngredientStore = defineStore('ingredient', () => {
     submitting.value = true;
     try {
       const response = await deleteIngredient(id);
-      if (response.ok) {
+      if (!response.error) {
         await loadIngredientsList(storeId);
         return true;
       }

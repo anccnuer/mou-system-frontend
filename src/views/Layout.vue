@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <div v-if="appLoading" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
+    <div v-if="loadingStore.loading" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
       <div class="bg-white rounded-lg shadow-xl p-6 flex items-center gap-4">
         <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
         <span class="text-gray-700">处理中...</span>
@@ -69,6 +69,7 @@ import { useStoreStore } from '../stores/store';
 import { useIngredientStore } from '../stores/ingredients';
 import { useDishStore } from '../stores/dishes';
 import { useOperationStore } from '../stores/operations';
+import { useLoadingStore } from '../stores/loading';
 
 const router = useRouter();
 const route = useRoute();
@@ -77,8 +78,7 @@ const storeStore = useStoreStore();
 const ingredientStore = useIngredientStore();
 const dishStore = useDishStore();
 const operationStore = useOperationStore();
-
-const appLoading = ref(false);
+const loadingStore = useLoadingStore();
 
 const tabs = [
   { name: 'Ingredients', label: '食材管理', path: '/ingredients' },
@@ -114,7 +114,6 @@ async function handleLogout() {
 }
 
 onMounted(async () => {
-  await authStore.checkAuthState();
   if (authStore.isAuthenticated) {
     await storeStore.loadStoresList();
     handleStoreChange();

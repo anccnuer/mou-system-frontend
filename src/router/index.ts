@@ -52,9 +52,13 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+
+  if (authStore.loading) {
+    await authStore.checkAuthState();
+  }
 
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login');
