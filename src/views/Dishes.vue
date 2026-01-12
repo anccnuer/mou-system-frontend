@@ -134,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useDishStore } from '../stores/dishes';
 import { useStoreStore } from '../stores/store';
 import { loadIngredientsOptions } from '../api/ingredients';
@@ -223,5 +223,10 @@ async function handleDelete(id: number) {
 onMounted(async () => {
   await dishStore.loadDishesList(storeStore.currentStoreId);
   ingredientsData.value = await loadIngredientsOptions(storeStore.currentStoreId);
+});
+
+watch(() => storeStore.currentStoreId, async (newStoreId) => {
+  await dishStore.loadDishesList(newStoreId);
+  ingredientsData.value = await loadIngredientsOptions(newStoreId);
 });
 </script>
