@@ -70,10 +70,10 @@ export const useIngredientStore = defineStore('ingredient', () => {
     }
   }
 
-  async function batchAdd(data: { ingredients: ExcelIngredient[]; store_id: number }): Promise<BatchAddResult> {
+  async function batchAdd(data: { ingredients: ExcelIngredient[]; store_id: number }, batchSize: number = 50): Promise<BatchAddResult> {
     submitting.value = true;
     try {
-      const result = await batchAddIngredients(data);
+      const result = await batchAddIngredients(data, batchSize);
       await loadIngredientsList(data.store_id);
       return result;
     } catch (error) {

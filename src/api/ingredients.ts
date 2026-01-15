@@ -31,7 +31,7 @@ export async function deleteIngredient(id: number): Promise<ApiResponse> {
   return response.data;
 }
 
-export async function batchAddIngredients(data: { ingredients: ExcelIngredient[]; store_id: number }): Promise<BatchAddResult> {
-  const response = await api.post<BatchAddResult>('/ingredients/batch', data);
+export async function batchAddIngredients(data: { ingredients: ExcelIngredient[]; store_id: number }, batchSize: number = 50): Promise<BatchAddResult> {
+  const response = await api.post<BatchAddResult>(`/ingredients/batch?batch_size=${batchSize}`, data);
   return response.data;
 }

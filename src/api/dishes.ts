@@ -26,8 +26,8 @@ export async function useDish(id: number, quantity: number, storeId: number): Pr
   return response.data;
 }
 
-export async function batchUseDishes(dishes: ExcelDish[], storeId: number): Promise<BatchUseResult> {
-  const response = await api.post<BatchUseResult>('/dishes/batch-use', {
+export async function batchUseDishes(dishes: ExcelDish[], storeId: number, batchSize: number = 50): Promise<BatchUseResult> {
+  const response = await api.post<BatchUseResult>(`/dishes/batch-use?batch_size=${batchSize}`, {
     dishes,
     store_id: storeId,
   });

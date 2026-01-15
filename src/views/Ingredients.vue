@@ -303,29 +303,39 @@ function handleExcelUpload(event: Event) {
 
 async function handleBatchAdd() {
   try {
-    const result = await ingredientStore.batchAdd({
-      ingredients: excelData.value,
-      store_id: storeStore.currentStoreId,
-    });
+    const BATCH_SIZE = 50;
+    const totalBatches = Math.ceil(excelData.value.length / BATCH_SIZE);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIndex = batchIndex * BATCH_SIZE;
+      const endIndex = Math.min(startIndex + BATCH_SIZE, excelData.value.length);
+      const batchData = excelData.value.slice(startIndex, endIndex);
+      
+      const result = await ingredientStore.batchAdd({
+        ingredients: batchData,
+        store_id: storeStore.currentStoreId,
+      }, BATCH_SIZE);
 
-    if (result.errors && result.errors.length > 0) {
-      result.errors.forEach((error) => {
-        const index = error.row - 1;
-        if (excelPreview.value[index]) {
-          excelPreview.value[index].status = error.error;
-          excelPreview.value[index].statusClass = 'text-red-600';
+      if (result.errors && result.errors.length > 0) {
+        result.errors.forEach((error) => {
+          const globalIndex = error.row - 1;
+          if (excelPreview.value[globalIndex]) {
+            excelPreview.value[globalIndex].status = error.error;
+            excelPreview.value[globalIndex].statusClass = 'text-red-600';
+            failCount++;
+          }
+        });
+      }
+
+      for (let i = startIndex; i < endIndex; i++) {
+        const item = excelPreview.value[i];
+        if (item && item.status === '待处理') {
+          item.status = '成功';
+          item.statusClass = 'text-green-600';
+          successCount++;
         }
-      });
-    }
-
-    const successCount = result.success || 0;
-    const failCount = result.failed || 0;
-
-    for (let i = 0; i < excelPreview.value.length; i++) {
-      const item = excelPreview.value[i];
-      if (item && item.status === '待处理') {
-        item.status = '成功';
-        item.statusClass = 'text-green-600';
       }
     }
 

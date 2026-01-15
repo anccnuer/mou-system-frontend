@@ -71,10 +71,10 @@ export const useDishStore = defineStore('dish', () => {
     }
   }
 
-  async function batchUse(data: { dishes: ExcelDish[]; store_id: number }): Promise<BatchUseResult> {
+  async function batchUse(data: { dishes: ExcelDish[]; store_id: number }, batchSize: number = 50): Promise<BatchUseResult> {
     submitting.value = true;
     try {
-      const result = await batchUseDishes(data.dishes, data.store_id);
+      const result = await batchUseDishes(data.dishes, data.store_id, batchSize);
       await loadDishesList(data.store_id);
       return result;
     } catch (error) {

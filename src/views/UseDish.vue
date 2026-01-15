@@ -208,32 +208,44 @@ function handleExcelUpload(event: Event) {
 
 async function handleBatchUse() {
   try {
-    const result = await dishStore.batchUse({
-      dishes: excelData.value,
-      store_id: storeStore.currentStoreId,
-    });
+    const BATCH_SIZE = 20;
+    const totalBatches = Math.ceil(excelData.value.length / BATCH_SIZE);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIndex = batchIndex * BATCH_SIZE;
+      const endIndex = Math.min(startIndex + BATCH_SIZE, excelData.value.length);
+      const batchData = excelData.value.slice(startIndex, endIndex);
+      
+      const result = await dishStore.batchUse({
+        dishes: batchData,
+        store_id: storeStore.currentStoreId,
+      }, BATCH_SIZE);
 
-    if (!result.results) {
-      throw new Error('返回数据格式错误: ' + JSON.stringify(result));
-    }
-
-    result.results.forEach((item, index) => {
-      const previewItem = excelPreview.value[index];
-      if (previewItem) {
-        if (item.success) {
-          previewItem.status = '成功';
-          previewItem.statusClass = 'text-green-600';
-        } else {
-          previewItem.status = item.error || '失败';
-          previewItem.statusClass = 'text-red-600';
-        }
+      if (!result.results) {
+        throw new Error('返回数据格式错误: ' + JSON.stringify(result));
       }
-    });
+
+      result.results.forEach((item, index) => {
+        const globalIndex = startIndex + index;
+        const previewItem = excelPreview.value[globalIndex];
+        if (previewItem) {
+          if (item.success) {
+            previewItem.status = '成功';
+            previewItem.statusClass = 'text-green-600';
+            successCount++;
+          } else {
+            previewItem.status = item.error || '失败';
+            previewItem.statusClass = 'text-red-600';
+            failCount++;
+          }
+        }
+      });
+    }
 
     await ingredientStore.loadIngredientsList(storeStore.currentStoreId);
 
-    const successCount = result.results.filter(r => r.success).length;
-    const failCount = result.results.filter(r => !r.success).length;
     alert(`处理完成！成功：${successCount}，失败：${failCount}`);
   } catch (error: any) {
     alert('批量使用失败: ' + error.message);
